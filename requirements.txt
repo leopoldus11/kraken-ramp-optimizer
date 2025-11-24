@@ -1,0 +1,10 @@
+pandas==2.2.0
+numpy==1.26.3
+requests==2.31.0
+Faker==22.5.1
+duckdb==0.9.2
+dbt-core==1.7.0
+dbt-duckdb==1.7.0
+streamlit==1.30.0
+sqlalchemy==2.0.25
+pyarrow==15.0.0
