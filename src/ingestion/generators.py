@@ -17,7 +17,8 @@ fake = Faker()
 def generate_mock_ramp_data(
     num_records: int, 
     crypto_prices: Dict[str, float], 
-    fx_rates: Dict[str, float]
+    fx_rates: Dict[str, float],
+    target_date: datetime = None  # Added parameter for date-specific generation
 ) -> pd.DataFrame:
     """
     Generates mock fiat-to-crypto on-ramp transactions with realistic patterns.
@@ -26,6 +27,7 @@ def generate_mock_ramp_data(
         num_records: Number of transactions to generate
         crypto_prices: Current USD prices for each crypto token
         fx_rates: Exchange rates for fiat currencies
+        target_date: Optional specific date to generate transactions for (for incremental loading)
     
     Returns:
         pd.DataFrame: Synthetic transaction data ready for analysis
@@ -44,11 +46,18 @@ def generate_mock_ramp_data(
         # ====================================================================
         # TIMESTAMP GENERATION
         # ====================================================================
-        # Generate transaction date within last 90 days
-        # Skewed towards recent activity (random uniform distribution)
-        days_ago = random.randint(0, 90)
-        # Add random time within that day
-        txn_date = datetime.now() - timedelta(days=days_ago, minutes=random.randint(0, 1440))
+        if target_date:
+            # If target_date is provided, generate timestamp within that specific day
+            start_of_day = datetime.combine(target_date, datetime.min.time())
+            # Random time throughout the 24-hour period (0-86400 seconds)
+            random_seconds = random.randint(0, 86400)
+            txn_date = start_of_day + timedelta(seconds=random_seconds)
+        else:
+            # Original behavior: Generate transaction date within last 90 days
+            # Skewed towards recent activity (random uniform distribution)
+            days_ago = random.randint(0, 90)
+            # Add random time within that day
+            txn_date = datetime.now() - timedelta(days=days_ago, minutes=random.randint(0, 1440))
         
         # ====================================================================
         # USER & GEOGRAPHIC DATA

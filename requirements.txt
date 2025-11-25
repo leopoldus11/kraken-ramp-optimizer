@@ -8,3 +8,4 @@ dbt-duckdb==1.7.0
 streamlit==1.30.0
 sqlalchemy==2.0.25
 pyarrow==15.0.0
+google-cloud-bigquery==3.14.1

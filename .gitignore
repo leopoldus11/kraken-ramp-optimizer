@@ -35,3 +35,8 @@ data/processed/*.parquet
 target/
 dbt_packages/
 logs/
+
+# Google Cloud credentials (NEVER commit these!)
+credentials/
+*.json
+!package.json
