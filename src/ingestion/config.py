@@ -50,7 +50,22 @@ SUPPORTED_CRYPTO = ["bitcoin", "ethereum", "solana", "tether"]
 # Payment methods available on the platform
 PAYMENT_METHODS = ["credit_card", "debit_card", "ach_transfer", "sepa", "apple_pay"]
 
+# Number of users to generate
+NUM_USERS = 1000
+
 DAILY_BATCH_SIZE = 500
+
+# Number of deposits to generate
+NUM_DEPOSITS = 800
+
+# Number of withdrawals to generate
+NUM_WITHDRAWALS = 600
+
+# Number of trades to generate
+NUM_TRADES = 2000
+
+# Number of orders to generate
+NUM_ORDERS = 3000
 
 # ============================================================================
 # BIGQUERY CONFIGURATION
@@ -64,6 +79,26 @@ BQ_DATASET = "kraken_ramp_raw"
 
 # BigQuery table name for raw transactions
 BQ_TABLE = "ramp_transactions"
+
+# BigQuery table name for users
+BQ_USERS_TABLE = "users"
+BQ_USERS_TABLE_FULL = f"{GCP_PROJECT_ID}.{BQ_DATASET}.{BQ_USERS_TABLE}"
+
+# BigQuery table name for deposits
+BQ_DEPOSITS_TABLE = "deposits"
+BQ_DEPOSITS_TABLE_FULL = f"{GCP_PROJECT_ID}.{BQ_DATASET}.{BQ_DEPOSITS_TABLE}"
+
+# BigQuery table name for withdrawals
+BQ_WITHDRAWALS_TABLE = "withdrawals"
+BQ_WITHDRAWALS_TABLE_FULL = f"{GCP_PROJECT_ID}.{BQ_DATASET}.{BQ_WITHDRAWALS_TABLE}"
+
+# BigQuery table name for trades
+BQ_TRADES_TABLE = "trades"
+BQ_TRADES_TABLE_FULL = f"{GCP_PROJECT_ID}.{BQ_DATASET}.{BQ_TRADES_TABLE}"
+
+# BigQuery table name for orders
+BQ_ORDERS_TABLE = "orders"
+BQ_ORDERS_TABLE_FULL = f"{GCP_PROJECT_ID}.{BQ_DATASET}.{BQ_ORDERS_TABLE}"
 
 # Full table reference in BigQuery format: project.dataset.table
 BQ_TABLE_FULL = f"{GCP_PROJECT_ID}.{BQ_DATASET}.{BQ_TABLE}"
