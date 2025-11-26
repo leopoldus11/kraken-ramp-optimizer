@@ -15,43 +15,43 @@ This feature extends the pipeline with a complete exchange simulation including:
 ## Data Model Overview
 
 \`\`\`
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           KRAKEN EXCHANGE DATA MODEL                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   ┌──────────┐                                                              │
-│   │  USERS   │◄──────────────────────────────────────────────────────────┐  │
-│   │──────────│                                                           │  │
-│   │ user_id  │ (PRIMARY KEY - all other tables reference this)           │  │
-│   │ email    │                                                           │  │
-│   │ country  │                                                           │  │
-│   │ kyc_     │                                                           │  │
-│   │  status  │                                                           │  │
-│   └────┬─────┘                                                           │  │
-│        │                                                                 │  │
-│        │ user_id (FK)                                                    │  │
-│        ▼                                                                 │  │
-│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────────────┐   │  │
-│   │ DEPOSITS │    │WITHDRAWLS│    │  ORDERS  │    │ RAMP_TRANSACTIONS│   │  │
-│   │──────────│    │──────────│    │──────────│    │──────────────────│   │  │
-│   │deposit_id│    │withdrawal│    │ order_id │    │  transaction_id  │   │  │
-│   │ user_id  │    │   _id    │    │ user_id  │    │     user_id      │───┘  │
-│   │ amount   │    │ user_id  │    │  status  │    │   fiat_amount    │      │
-│   │ currency │    │ amount   │    │  side    │    │   crypto_amount  │      │
-│   └──────────┘    └──────────┘    └────┬─────┘    └──────────────────┘      │
-│                                        │                                    │
-│                                        │ order_id (FK)                      │
-│                                        ▼                                    │
-│                                   ┌──────────┐                              │
-│                                   │  TRADES  │                              │
-│                                   │──────────│                              │
-│                                   │ trade_id │                              │
-│                                   │ order_id │ (references filled orders)   │
-│                                   │ user_id  │                              │
-│                                   │  price   │                              │
-│                                   └──────────┘                              │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│               KRAKEN EXCHANGE DATA MODEL                    │
+└─────────────────────────────────────────────────────────────┘
+
+                        ┌──────────┐
+                        │  USERS   │ (PRIMARY KEY)
+                        ├──────────┤
+                        │ user_id  │
+                        │ email    │
+                        │ country  │
+                        │ kyc_     │
+                        │ status   │
+                        └─────┬────┘
+                              │
+              ┌───────────────┼───────────────┬──────────────┐
+              │               │               │              │
+              ▼               ▼               ▼              ▼
+      ┌───────────┐   ┌───────────┐   ┌───────────┐  ┌──────────────┐
+      │ DEPOSITS  │   │WITHDRAWALS│   │  ORDERS   │  │RAMP_TRANS-   │
+      ├───────────┤   ├───────────┤   ├───────────┤  │  ACTIONS     │
+      │deposit_id │   │withdrawal │   │ order_id  │  │transaction_id│
+      │ user_id───┼───┤   _id     │   │ user_id───┼──┤  user_id     │
+      │ amount    │   │ user_id───┼───┤  status   │  │ fiat_amount  │
+      │ currency  │   │ amount    │   │  side     │  │crypto_amount │
+      └───────────┘   └───────────┘   └─────┬─────┘  └──────────────┘
+                                            │
+                                            │ order_id (FK)
+                                            │
+                                            ▼
+                                      ┌──────────┐
+                                      │  TRADES  │
+                                      ├──────────┤
+                                      │ trade_id │
+                                      │ order_id │
+                                      │ user_id  │
+                                      │  price   │
+                                      └──────────┘
 \`\`\`
 
 ### Referential Integrity Rules
@@ -65,51 +65,46 @@ This feature extends the pipeline with a complete exchange simulation including:
 ## Pipeline Data Flow
 
 \`\`\`
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              PIPELINE DATA FLOW                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  EXTERNAL APIs                    GENERATORS                  BIGQUERY      │
-│  ─────────────                    ──────────                  ────────      │
-│                                                                             │
-│  ┌─────────────┐                                                            │
-│  │  CoinGecko  │ ──► crypto_prices ──┐                                      │
-│  │    API      │                     │                                      │
-│  └─────────────┘                     ▼                                      │
-│                              ┌──────────────┐      ┌─────────────────────┐  │
-│  ┌─────────────┐             │   generate_  │      │                     │  │
-│  │  Exchange   │ ──► fx_rates│   mock_ramp_ │ ───► │  ramp_transactions  │  │
-│  │  Rates API  │             │     data()   │      │                     │  │
-│  └─────────────┘             └──────────────┘      └─────────────────────┘  │
-│                                     ▲                                       │
-│                                     │                                       │
-│                              ┌──────┴───────┐                               │
-│                              │   user_ids   │◄─────────────────────┐        │
-│                              │ from BigQuery│                      │        │
-│                              └──────────────┘                      │        │
-│                                                                    │        │
-│                              ┌──────────────┐      ┌─────────────┐ │        │
-│                              │   generate_  │      │             │ │        │
-│                              │  mock_users()│ ───► │    users    │─┘        │
-│                              └──────────────┘      │  (LOADED    │          │
-│                                                    │    FIRST)   │          │
-│                              ┌──────────────┐      └─────────────┘          │
-│                              │   generate_  │      ┌─────────────┐          │
-│                              │mock_deposits │ ───► │   deposits  │          │
-│                              └──────────────┘      └─────────────┘          │
-│                                                                             │
-│                              ┌──────────────┐      ┌─────────────┐          │
-│                              │   generate_  │      │             │          │
-│                              │ mock_orders()│ ───► │   orders    │──┐       │
-│                              └──────────────┘      └─────────────┘  │       │
-│                                                                     │       │
-│                              ┌──────────────┐      ┌─────────────┐  │       │
-│                              │  generate_   │      │             │  │       │
-│                              │ trades_from_ │ ───► │   trades    │◄─┘       │
-│                              │   orders()   │      │(from filled │          │
-│                              └──────────────┘      │   orders)   │          │
-│                                                    └─────────────┘          │
-└─────────────────────────────────────────────────────────────────────────────┘
+EXTERNAL APIs         GENERATORS            BIGQUERY
+─────────────         ──────────            ────────
+
+CoinGecko API ──► crypto_prices ─┐
+                                 │
+Exchange Rate API ──► fx_rates   │
+                                 ▼
+                        ┌────────────────┐       ┌───────────────┐
+                        │  generate_     │       │               │
+                        │  mock_ramp_    │  ───► │ ramp_trans-   │
+                        │  data()        │       │   actions     │
+                        └────────────────┘       └───────────────┘
+                                 ▲
+                                 │
+                        ┌────────┴────────┐
+                        │   user_ids      │◄───────────────┐
+                        │  from BigQuery  │                │
+                        └─────────────────┘                │
+                                                           │
+                        ┌────────────────┐       ┌────────┴──────┐
+                        │  generate_     │       │               │
+                        │  mock_users()  │  ───► │    users      │
+                        └────────────────┘       │ (LOADED FIRST)│
+                                                 └───────────────┘
+                        ┌────────────────┐       ┌───────────────┐
+                        │  generate_     │       │               │
+                        │mock_deposits() │  ───► │   deposits    │
+                        └────────────────┘       └───────────────┘
+
+                        ┌────────────────┐       ┌───────────────┐
+                        │  generate_     │       │               │
+                        │ mock_orders()  │  ───► │   orders      │──┐
+                        └────────────────┘       └───────────────┘  │
+                                                                    │
+                        ┌────────────────┐       ┌───────────────┐  │
+                        │  generate_     │       │               │  │
+                        │ trades_from_   │  ───► │    trades     │◄─┘
+                        │  orders()      │       │ (from filled  │
+                        └────────────────┘       │   orders)     │
+                                                 └───────────────┘
 \`\`\`
 
 ---
@@ -166,6 +161,7 @@ This will load tables in the correct order:
 3. **withdrawals** (600 withdrawals) - references users
 4. **orders** (3,000 orders) - references users
 5. **trades** (generated from filled orders) - references orders AND users
+6. **ramp_transactions** (incremental daily)
 
 ### 5. Run Incremental Ramp Transactions
 
@@ -211,7 +207,7 @@ LIMIT 10;
 ## Tech Stack
 
 | Layer | Technology | Purpose |
-|-------|------------|---------|
+|-------|-----------|---------|
 | **Storage** | Google BigQuery | Cloud data warehouse |
 | **Transformation** | dbt (planned) | SQL-based data modeling |
 | **Orchestration** | Airflow (planned) | Pipeline scheduling |
